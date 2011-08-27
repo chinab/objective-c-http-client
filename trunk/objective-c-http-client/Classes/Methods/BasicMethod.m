@@ -42,6 +42,12 @@
 	return self;
 }
 
+-(void)dealloc
+{
+    [params release];
+    [super dealloc];
+}
+
 -(void)addParameter:(NSString*)paramData withName:(NSString*)paramName {
 	//Add the parameter to the parameters dictionary
 	[params setValue:paramData forKey:paramName];
@@ -60,6 +66,11 @@
 	[request setHTTPMethod:methodType];
 	//Set the content-type
 	[request addValue:contentType forHTTPHeaderField:@"Content-Type"];
+	
+	if ([params count] == 0) {
+		// there are no params: so neither a body nor query arguments are needed.  
+		return;
+	}
 	
 	//Create a data object to hold the body while we're creating it
 	NSMutableData * body = [[NSMutableData alloc] init];
@@ -109,6 +120,7 @@
 	//Execute the HTTP method, saving the return data
 	NSHTTPURLResponse * response;
 	NSData *returnData = [NSURLConnection sendSynchronousRequest:request returningResponse:&response error:nil];
+    [request release];
 	
 	HttpResponse * responseObject = [[HttpResponse alloc] initWithHttpURLResponse:response withData:returnData];
 	
@@ -119,11 +131,12 @@
 	NSMutableURLRequest * request = [[NSMutableURLRequest alloc] init];
 	
 	[self prepareMethod:methodURL methodType:methodType dataInBody:dataInBody contentType:contentType withRequest:request];
-	
+
 	//Execute the HTTP method
 	DelegateMessenger * messenger = [DelegateMessenger delegateMessengerWithDelegate:delegate];
 	
 	[NSURLConnection connectionWithRequest:request delegate:messenger];
+    [request release];
 }
 
 @end
